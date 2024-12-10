@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>David AI Consultant</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="chatbox">
+        <div class="chat-header">
+            <h3>💰 David AI Consultant</h3>
+            <p>Your budget-savvy AI, here to help you save smarter!</p>
+        </div>
+        <div class="chat-body" id="chat-body">
+            <div class="message bot-message">
+                Hi! I'm David, your personal budget consultant. How can I help you today?
+            </div>
+        </div>
+        <div class="chat-footer">
+            <input
+                type="text"
+                id="chat-input"
+                placeholder="Type your question about saving money..."
+            />
+            <button id="send-btn" class="animated-button">Send</button>
+            <button id="dark-mode-toggle" class="animated-button">🌙</button>
+        </div>
+        <div class="quick-replies">
+            <button class="animated-button" onclick="sendQuickReply('How do I save on groceries?')">Save on Groceries</button>
+            <button class="animated-button" onclick="sendQuickReply('What are some money-saving tips?')">Money-Saving Tips</button>
+            <button class="animated-button" onclick="sendQuickReply('How can I budget for a vacation?')">Budget a Vacation</button>
+        </div>
+    </div>
+
+    <script>
+        const chatBody = document.getElementById("chat-body");
+        const chatInput = document.getElementById("chat-input");
+        const sendBtn = document.getElementById("send-btn");
+
+        
+        const appendMessage = (message, sender) => {
+            const messageDiv = document.createElement("div");
+            messageDiv.classList.add("message", `${sender}-message`);
+            messageDiv.textContent = message;
+            chatBody.appendChild(messageDiv);
+            chatBody.scrollTop = chatBody.scrollHeight;  
+        };
+
+        
+        const sendMessage = (message) => {
+            appendMessage(message, "user");
+
+            const typingIndicator = document.createElement("div");
+            typingIndicator.classList.add("message", "bot-message", "typing-indicator");
+            typingIndicator.textContent = "Typing...";
+            chatBody.appendChild(typingIndicator);
+
+            
+            fetch("http://127.0.0.1:5000/generate-budget", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ message }),
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    chatBody.removeChild(typingIndicator);
+                    appendMessage(data.response || "Sorry, something went wrong.", "bot");
+                })
+                .catch((error) => {
+                    console.error("Error:", error);
+                    chatBody.removeChild(typingIndicator);
+                    appendMessage("Sorry, there was an error. Please try again later.", "bot");
+                });
+        };
+
+        sendBtn.addEventListener("click", () => {
+            const message = chatInput.value.trim();
+            if (message) {
+                sendMessage(message);
+                chatInput.value = "";
+            }
+        });
+
+        chatInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                const message = chatInput.value.trim();
+                if (message) {
+                    sendMessage(message);
+                    chatInput.value = "";
+                }
+            }
+        });
+
+        const sendQuickReply = (message) => {
+            sendMessage(message);
+        };
+
+        document.getElementById("dark-mode-toggle").addEventListener("click", () => {
+            document.body.classList.toggle("dark-mode");
+        });
+    </script>
+</body>
+</html>
